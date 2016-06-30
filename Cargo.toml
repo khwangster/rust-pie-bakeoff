@@ -1,0 +1,10 @@
+[package]
+name = "bakeoff"
+version = "0.1.0"
+authors = ["Kenneth Hwang <ken@truex.com>"]
+
+[dependencies]
+iron = "*"
+router = "*"
+rustc-serialize = "*"
+hyper = "*"
