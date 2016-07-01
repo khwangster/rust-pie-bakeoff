@@ -38,7 +38,9 @@ fn main() {
         get "/pies" => endpoints::pies,
         get "/pies/recommend" => endpoints::recommend,
         get "/pie/:pie_id" => endpoints::pie,
-        post "/pie/:pie_id/purchases" => endpoints::purchase
+        get "/pies/:pie_id" => endpoints::pie,
+        post "/pie/:pie_id/purchases" => endpoints::purchase,
+        post "/pies/:pie_id/purchases" => endpoints::purchase
     );
 
     let mut chain = Chain::new(router);
@@ -50,6 +52,9 @@ fn main() {
     let redis = connect_redis();
     chain.link_before(Read::<cache::Redis>::one(redis.clone()));
     update_redis(&pies, &redis);
+
+//    pie_state::purchase_pie(&redis, &pies[0], "ken".to_string(), 1);
+//    pie_state::pie_purchases(&redis, &pies[0]);
 
     Iron::new(chain).http("localhost:3000").unwrap();
 

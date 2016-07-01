@@ -58,14 +58,11 @@ pub fn pie(req: &mut Request) -> IronResult<Response> {
     let remaining = pie_state::get_remaining(&redis, &pie);
 
     let show_pie = pies::ShowPie {
-        name: pie.name,
-        image_url: pie.image_url,
-        price_per_slice: pie.price_per_slice,
+        name: pie.name.clone(),
+        image_url: pie.image_url.clone(),
+        price_per_slice: pie.price_per_slice.clone(),
         remaining_slices: remaining,
-        purchases: vec![pies::Purchase {
-                    username: "Ken".to_string(),
-                    slices: 1u64
-                }]
+        purchases: pie_state::pie_purchases(&redis, &pie)
     };
 
     match url_end {
@@ -74,16 +71,23 @@ pub fn pie(req: &mut Request) -> IronResult<Response> {
             response::json(data)
         },
         Some(x) => {
-            response::html(format!("<html><h1>{}</h1></html>", pie_id))
+            response::html(format!("<html><code>{}</code></html>", json::as_pretty_json(&show_pie)))
         },
         _ => response::not_found()
     }
 }
 
-pub fn purchase(_: &mut Request) -> IronResult<Response> {
+pub fn purchase(req: &mut Request) -> IronResult<Response> {
+    let id_index = req.get::<Read<cache::IdIndex>>().unwrap();
+    let redis = req.get::<Read<cache::Redis>>().unwrap();
+
+    let extentions = req.extensions.get::<Router>()
+        .unwrap();
+
+
     response::text(String::from("hello"))
 }
 
-pub fn recommend(_: &mut Request) -> IronResult<Response> {
+pub fn recommend(req: &mut Request) -> IronResult<Response> {
     response::text(String::from("hello"))
 }
