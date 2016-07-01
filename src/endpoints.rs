@@ -11,8 +11,14 @@ extern crate persistent;
 use persistent::{State, Read, Write};
 use iron::typemap::Key;
 
+extern crate rustc_serialize;
+use rustc_serialize::json;
+
+use std::str::FromStr;
+
 use response;
 use pies;
+use pie_state;
 use cache;
 
 pub fn hello_world(req: &mut Request) -> IronResult<Response> {
@@ -25,22 +31,50 @@ pub fn pies(req: &mut Request) -> IronResult<Response> {
 }
 
 pub fn pie(req: &mut Request) -> IronResult<Response> {
+
+    let id_index = req.get::<Read<cache::IdIndex>>().unwrap();
+    let redis = req.get::<Read<cache::Redis>>().unwrap();
+    let url_end = req.url.path.last();
+
+    // req.extensions must go last because borrow checker is dumb
     let pie_option = req.extensions.get::<Router>()
         .unwrap()
         .find("pie_id");
 
-    match pie_option {
+    // return if we can't find pie_id
+    let pie_id = if let Some(x) = pie_option {
+        u64::from_str(x.trim_right_matches(".json")).unwrap()
+    } else {
+        return response::not_found()
+    };
+
+    // return if we can't find pie in cache
+    let pie = if let Some(x) = id_index.get(&pie_id) {
+        x.clone()
+    } else {
+        return response::not_found()
+    };
+
+    let remaining = pie_state::get_remaining(&redis, &pie);
+
+    let show_pie = pies::ShowPie {
+        name: pie.name,
+        image_url: pie.image_url,
+        price_per_slice: pie.price_per_slice,
+        remaining_slices: remaining,
+        purchases: vec![pies::Purchase {
+                    username: "Ken".to_string(),
+                    slices: 1u64
+                }]
+    };
+
+    match url_end {
+        Some(x) if x.ends_with("json") => {
+            let data: String = json::encode(&show_pie).unwrap();
+            response::json(data)
+        },
         Some(x) => {
-            let pie_id = x.trim_right_matches(".json");
-            match req.url.path.last() {
-                Some(x) if x.ends_with("json") => {
-                    response::json(format!("{{ \"json\": \"{}\" }}", pie_id))
-                }
-                Some(x) => {
-                    response::html(format!("<html><h1>{}</h1></html>", pie_id))
-                }
-                _ => response::not_found()
-            }
+            response::html(format!("<html><h1>{}</h1></html>", pie_id))
         },
         _ => response::not_found()
     }

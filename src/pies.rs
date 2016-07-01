@@ -17,6 +17,21 @@ pub struct Pie {
     pub labels: Vec<String>
 }
 
+#[derive(RustcDecodable, RustcEncodable, Clone, Debug)]
+pub struct ShowPie {
+    pub name: String,
+    pub image_url: String,
+    pub price_per_slice: f64,
+    pub remaining_slices: u64,
+    pub purchases: Vec<Purchase>
+}
+
+#[derive(RustcDecodable, RustcEncodable, Clone, Debug)]
+pub struct Purchase {
+    pub username: String,
+    pub slices: u64
+}
+
 pub fn new(json: String) -> Vec<Pie> {
     let decoded: Pies = json::decode(&json).unwrap();
     println!("{:?}", decoded.pies);

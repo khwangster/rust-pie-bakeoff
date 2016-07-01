@@ -11,9 +11,7 @@ use redis::Commands;
 
 use pies;
 
-macro_rules! remaining_key {
-    ( $x:expr ) => ( format!("pie-{}-remaining", $x) )
-}
+macro_rules! remaining_key { ($x:expr) => (format!("pie-{}-remaining", $x)) }
 
 pub fn set_remaining(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, pie: &pies::Pie) {
     let conn = pool.get().expect("redis connection failed");
