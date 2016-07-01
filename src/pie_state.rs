@@ -36,13 +36,13 @@ pub enum PurchaseStatus {
     Success
 }
 
-pub fn purchase_pie(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, pie: &pies::Pie, user: String, amount: isize) -> PurchaseStatus {
+pub fn purchase_pie(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, pie: &pies::Pie, user: &String, amount: isize) -> PurchaseStatus {
     if amount > 3 {
         return PurchaseStatus::Fatty;
     }
 
     let conn = pool.get().expect("redis connection failed");
-    let exists : bool = conn.hexists(purchases_key!(pie.id), &user).unwrap();
+    let exists : bool = conn.hexists(purchases_key!(pie.id), user).unwrap();
     let num_left : isize = conn.get(remaining_key!(pie.id)).unwrap();
 
     if num_left <= 0 {
@@ -50,7 +50,7 @@ pub fn purchase_pie(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, pie: 
     }
 
     if exists {
-        let previous_amount : isize = conn.hget(purchases_key!(pie.id), &user).unwrap();
+        let previous_amount : isize = conn.hget(purchases_key!(pie.id), user).unwrap();
         println!("previous amount {:?}", previous_amount);
         if previous_amount + amount > 3 {
             return PurchaseStatus::Fatty;
@@ -59,13 +59,13 @@ pub fn purchase_pie(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, pie: 
                 return PurchaseStatus::Gone;
             }
 
-            let n : isize = conn.hincr(purchases_key!(pie.id), &user, amount).unwrap();
+            let n : isize = conn.hincr(purchases_key!(pie.id), user, amount).unwrap();
             let _ : () = conn.incr(remaining_key!(pie.id), -1 * amount).unwrap();
             println!("bought {} pies total!", n)
         }
     } else {
         println!("buying pie!");
-        let n : isize = conn.hincr(purchases_key!(pie.id), &user, amount).unwrap();
+        let n : isize = conn.hincr(purchases_key!(pie.id), user, amount).unwrap();
         let _ : () = conn.incr(remaining_key!(pie.id), -1 * amount).unwrap();
     }
 

@@ -7,6 +7,9 @@ use iron::modifiers::Header;
 extern crate router;
 use router::Router;
 
+extern crate url;
+use url::{Url, Host};
+
 extern crate persistent;
 use persistent::{State, Read, Write};
 use iron::typemap::Key;
@@ -27,7 +30,20 @@ pub fn hello_world(req: &mut Request) -> IronResult<Response> {
 }
 
 pub fn pies(req: &mut Request) -> IronResult<Response> {
-    response::json(format!("{{ \"json\": \"{}\" }}", req.url))
+//    response::json(format!("{{ \"json\": \"{}\" }}", req.url));
+
+//    let url = Url::parse(req.url).unwrap_or_else(
+//        { return response::error(); }
+//    );
+    let url = req.url.clone().into_generic_url();
+    match url.query_pairs() {
+        Some(vec) => {
+
+        },
+        None => return response::error()
+    };
+
+    response::debug(&url.query_pairs())
 }
 
 pub fn pie(req: &mut Request) -> IronResult<Response> {
@@ -81,11 +97,69 @@ pub fn purchase(req: &mut Request) -> IronResult<Response> {
     let id_index = req.get::<Read<cache::IdIndex>>().unwrap();
     let redis = req.get::<Read<cache::Redis>>().unwrap();
 
-    let extentions = req.extensions.get::<Router>()
+    let extensions = req.extensions.get::<Router>()
         .unwrap();
 
+    // return if we can't find pie_id
+    let pie_id = u64::from_str(extensions.find("pie_id").unwrap()).unwrap();
 
-    response::text(String::from("hello"))
+    let pie = if let Some(x) = id_index.get(&pie_id) {
+        x.clone()
+    } else {
+        return response::not_found()
+    };
+
+    let mut username = None;
+    let mut amount = None;
+    let mut slices = Some(1);
+
+    let url = req.url.clone().into_generic_url();
+    match url.query_pairs() {
+        Some(vec) => {
+            for &(ref name, ref value) in vec.iter() {
+                match name.trim() {
+                    "username" => {
+                        username = Some(value.clone());
+                    },
+                    "amount" => {
+                        amount = f64::from_str(&value.clone()).ok();
+                    },
+                    "slices" => {
+                        slices = isize::from_str(&value.clone()).ok();
+                    }
+                    _ => {}
+                }
+            }
+        },
+        None => return response::error()
+    };
+
+    match (username, amount, slices) {
+        (Some(u), Some(a), Some(s)) => {
+            match pie_state::purchase_pie(&redis, &pie, &u, s) {
+                pie_state::PurchaseStatus::Success => {
+                    response::purchased()
+
+                }
+                pie_state::PurchaseStatus::Fatty => {
+                    response::glutton()
+
+                }
+                pie_state::PurchaseStatus::Gone => {
+                    response::gone()
+
+                }
+            }
+        },
+        (None, None, None) => {
+            response::error()
+        },
+        (_, _, _) => {
+//            response::debug(format!("username: {:?}, amount:{:?}, slices: {:?}", username, amount, slices))
+            response::error()
+        }
+    }
+
 }
 
 pub fn recommend(req: &mut Request) -> IronResult<Response> {

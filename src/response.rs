@@ -18,6 +18,46 @@ pub fn not_found() -> IronResult<Response> {
                       )))
 }
 
+pub fn error() -> IronResult<Response> {
+    Ok(Response::with((
+                          status::InternalServerError,
+                          "Internal Server Error",
+                          Header(ContentType::plaintext())
+                      )))
+}
+
+pub fn gone() -> IronResult<Response> {
+    Ok(Response::with((
+                          status::Gone,
+                          "{\"error\": \"No more of that pie.  Try something else.\"}",
+                          Header(ContentType::json())
+                      )))
+}
+
+pub fn purchased() -> IronResult<Response> {
+    Ok(Response::with((
+                          status::Created,
+                          "{\"text\": \"You bought some pie.\"}",
+                          Header(ContentType::json())
+                      )))
+}
+
+pub fn glutton() -> IronResult<Response> {
+    Ok(Response::with((
+                          status::TooManyRequests,
+                          "{\"error\": \"Gluttony is discouraged.\"}",
+                          Header(ContentType::json())
+                      )))
+}
+
+pub fn bad_math() -> IronResult<Response> {
+    Ok(Response::with((
+                          status::PaymentRequired,
+                          "{\"error\": \"You did math wrong.\"}",
+                          Header(ContentType::json())
+                      )))
+}
+
 pub fn debug<T>(something: T) -> IronResult<Response>
     where T: core::fmt::Debug {
     Ok(Response::with((

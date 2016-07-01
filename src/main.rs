@@ -26,6 +26,9 @@ use std::thread;
 use r2d2_redis::RedisConnectionManager;
 use redis::Commands;
 
+extern crate url;
+use url::{Url, Host};
+
 mod endpoints;
 mod response;
 mod pies;
@@ -39,7 +42,7 @@ fn main() {
         get "/pies/recommend" => endpoints::recommend,
         get "/pie/:pie_id" => endpoints::pie,
         get "/pies/:pie_id" => endpoints::pie,
-        post "/pie/:pie_id/purchases" => endpoints::purchase,
+        any "/pie/:pie_id/purchases" => endpoints::purchase,
         post "/pies/:pie_id/purchases" => endpoints::purchase
     );
 
