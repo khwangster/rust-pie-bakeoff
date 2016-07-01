@@ -34,20 +34,27 @@ pub fn hello_world(req: &mut Request) -> IronResult<Response> {
 }
 
 pub fn pies(req: &mut Request) -> IronResult<Response> {
-//    response::json(format!("{{ \"json\": \"{}\" }}", req.url));
 
-//    let url = Url::parse(req.url).unwrap_or_else(
-//        { return response::error(); }
-//    );
-    let url = req.url.clone().into_generic_url();
-    match url.query_pairs() {
-        Some(vec) => {
+    let id_index = req.get::<Read<cache::IdIndex>>().unwrap();
+    let redis = req.get::<Read<cache::Redis>>().unwrap();
 
-        },
-        None => return response::error()
-    };
+    let mut pies = vec![];
+    let mut bytes = vec![];
 
-    response::debug(&url.query_pairs())
+    for (id, pie) in id_index.iter() {
+        let remaining = pie_state::get_remaining(&redis, &pie);
+        let show_pie = pies::ShowPie {
+            name: pie.name.clone(),
+            image_url: pie.image_url.clone(),
+            price_per_slice: pie.price_per_slice.clone(),
+            remaining_slices: remaining,
+            purchases: vec![]
+        };
+        pies.push(show_pie);
+    }
+
+    pie_template().render(&mut bytes, &pies::ShowPies { pies: pies }).unwrap();
+    response::html(format!("<html>{}</html>", str::from_utf8(&bytes).unwrap()))
 }
 
 fn pie_template() -> mustache::Template {
