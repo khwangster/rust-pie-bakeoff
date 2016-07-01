@@ -6,5 +6,9 @@ authors = ["Kenneth Hwang <ken@truex.com>"]
 [dependencies]
 iron = "*"
 router = "*"
-rustc-serialize = "*"
 hyper = "*"
+persistent = "*"
+rustc-serialize = "*"
+redis = "*"
+r2d2 = "*"
+r2d2_redis = "*"

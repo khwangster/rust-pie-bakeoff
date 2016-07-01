@@ -7,10 +7,17 @@ use iron::modifiers::Header;
 extern crate router;
 use router::Router;
 
-use response;
+extern crate persistent;
+use persistent::State;
+use iron::typemap::Key;
 
-pub fn hello_world(_: &mut Request) -> IronResult<Response> {
-    response::text(String::from("hello"))
+use response;
+use pies;
+use cache;
+
+pub fn hello_world(req: &mut Request) -> IronResult<Response> {
+    let pies = req.get::<State<cache::AllPies>>().unwrap();
+    response::debug(pies)
 }
 
 pub fn pies(req: &mut Request) -> IronResult<Response> {
@@ -37,4 +44,12 @@ pub fn pie(req: &mut Request) -> IronResult<Response> {
         },
         _ => response::not_found()
     }
+}
+
+pub fn purchase(_: &mut Request) -> IronResult<Response> {
+    response::text(String::from("hello"))
+}
+
+pub fn recommend(_: &mut Request) -> IronResult<Response> {
+    response::text(String::from("hello"))
 }

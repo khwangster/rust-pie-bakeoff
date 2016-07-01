@@ -7,10 +7,22 @@ use iron::modifiers::Header;
 extern crate router;
 use router::Router;
 
+extern crate core;
+use self::core::fmt;
+
 pub fn not_found() -> IronResult<Response> {
     Ok(Response::with((
                           status::NotFound,
                           "Not Found",
+                          Header(ContentType::plaintext())
+                      )))
+}
+
+pub fn debug<T>(something: T) -> IronResult<Response>
+    where T: core::fmt::Debug {
+    Ok(Response::with((
+                          status::Ok,
+                          format!("{:?}", something),
                           Header(ContentType::plaintext())
                       )))
 }
