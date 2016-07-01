@@ -24,6 +24,7 @@ pub struct Pie {
 
 #[derive(RustcDecodable, RustcEncodable, Clone, Debug)]
 pub struct ShowPie {
+    pub id: u64,
     pub name: String,
     pub image_url: String,
     pub price_per_slice: f64,

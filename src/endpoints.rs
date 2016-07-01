@@ -44,6 +44,7 @@ pub fn pies(req: &mut Request) -> IronResult<Response> {
     for (id, pie) in id_index.iter() {
         let remaining = pie_state::get_remaining(&redis, &pie);
         let show_pie = pies::ShowPie {
+            id: pie.id.clone(),
             name: pie.name.clone(),
             image_url: pie.image_url.clone(),
             price_per_slice: pie.price_per_slice.clone(),
@@ -60,7 +61,7 @@ pub fn pies(req: &mut Request) -> IronResult<Response> {
 fn pie_template() -> mustache::Template {
     mustache::compile_str("
     {{#pies}}
-    <h1>{{name}}</h1>
+    <h1><a href=\"/pies/{{id}}\">{{name}}</a></h1>
     <img src=\"{{image_url}}\" width=\"50%\"></img>
     <p>price: {{price_per_slice}}</p>
     <p>remaining: {{remaining_slices}}</p>
@@ -100,6 +101,7 @@ pub fn pie(req: &mut Request) -> IronResult<Response> {
     let remaining = pie_state::get_remaining(&redis, &pie);
 
     let show_pie = pies::ShowPie {
+        id: pie.id.clone(),
         name: pie.name.clone(),
         image_url: pie.image_url.clone(),
         price_per_slice: pie.price_per_slice.clone(),
