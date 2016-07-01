@@ -6,12 +6,12 @@ extern crate router;
 
 extern crate hyper;
 use hyper::client::Client;
-use std::io::Read;
+use std::io::Read as io_read;
 
 extern crate rustc_serialize;
 
 extern crate persistent;
-use persistent::State;
+use persistent::{State, Read, Write};
 use iron::typemap::Key;
 
 use std::collections::HashMap;
@@ -42,15 +42,16 @@ fn main() {
     );
 
     let mut chain = Chain::new(router);
-    let pies = boot();
-    chain.link(State::<cache::AllPies>::both(pies));
-//    chain.link(State::<cache::IdIndex>::both(make_id_index(pies)));
+    let pies = parse_pie_json();
+    chain.link_before(Read::<cache::IdIndex>::one(make_id_index(&pies)));
+    chain.link_before(Read::<cache::AllPieId>::one(make_id_vec(&pies)));
+    chain.link_before(Read::<cache::LabelIndex>::one(make_label_index(&pies)));
 
     Iron::new(chain).http("localhost:3000").unwrap();
 
 }
 
-fn boot() -> Vec<pies::Pie> {
+fn parse_pie_json() -> Vec<pies::Pie> {
     let client = Client::new();
     let mut res = client.get("http://stash.truex.com/tech/bakeoff/pies.json")
         .send().unwrap();
@@ -74,8 +75,29 @@ fn boot() -> Vec<pies::Pie> {
 //    pies;
 //}
 //
-//fn make_id_index(pies: &Vec<pies::Pie>) -> HashMap<u64, &pies::Pie> {
-//    let mut hash = HashMap::new();
-//    hash.insert(pies[0].id, &pies[0]);
-//    hash
-//}
+fn make_id_index(pies: &Vec<pies::Pie>) -> HashMap<u64, pies::Pie> {
+    let mut hash = HashMap::new();
+    for pie in pies {
+        hash.insert(pie.id, pie.clone());
+    }
+    hash
+}
+
+fn make_label_index(pies: &Vec<pies::Pie>) -> HashMap<String, Vec<pies::Pie>> {
+    let mut hash = HashMap::new();
+    for pie in pies {
+        for label in &pie.labels {
+            let vec = hash.entry(label.clone()).or_insert(vec![]);
+            vec.push(pie.clone());
+        }
+    }
+    hash
+}
+
+fn make_id_vec(pies: &Vec<pies::Pie>) -> Vec<u64> {
+    let mut vec = Vec::new();
+    for pie in pies {
+        vec.push(pie.id)
+    }
+    vec
+}

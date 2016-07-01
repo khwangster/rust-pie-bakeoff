@@ -21,10 +21,16 @@ use pies;
 pub struct AllPies;
 impl Key for AllPies { type Value = Vec<pies::Pie>; }
 
-//#[derive(Copy, Clone)]
-//pub struct AllPieId;
-//impl Key for AllPieId { type Value = Vec<u64>; }
-////
-////#[derive(Copy, Clone)]
-////pub struct IdIndex;
-////impl Key for IdIndex { type Value = HashMap<u64, &'main pies::Pie>; }
+#[derive(Copy, Clone)]
+pub struct AllPieId;
+impl Key for AllPieId { type Value = Vec<u64>; }
+
+#[derive(Copy, Clone)]
+pub struct IdIndex;
+impl Key for IdIndex { type Value = HashMap<u64, pies::Pie>; }
+
+
+#[derive(Copy, Clone)]
+pub struct LabelIndex;
+impl Key for LabelIndex { type Value = HashMap<String, Vec<pies::Pie>>; }
+

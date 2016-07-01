@@ -8,7 +8,7 @@ extern crate router;
 use router::Router;
 
 extern crate persistent;
-use persistent::State;
+use persistent::{State, Read, Write};
 use iron::typemap::Key;
 
 use response;
@@ -16,7 +16,7 @@ use pies;
 use cache;
 
 pub fn hello_world(req: &mut Request) -> IronResult<Response> {
-    let pies = req.get::<State<cache::AllPies>>().unwrap();
+    let pies = req.get::<Read<cache::LabelIndex>>().unwrap();
     response::debug(pies)
 }
 
