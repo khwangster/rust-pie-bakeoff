@@ -7,6 +7,11 @@ pub struct Pies {
     pub pies: Vec<Pie>
 }
 
+#[derive(RustcDecodable, RustcEncodable, Debug)]
+pub struct ShowPies {
+    pub pies: Vec<ShowPie>
+}
+
 #[derive(RustcDecodable, RustcEncodable, Clone, Debug)]
 pub struct Pie {
     pub id: u64,

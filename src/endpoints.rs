@@ -18,6 +18,10 @@ extern crate rustc_serialize;
 use rustc_serialize::json;
 
 use std::str::FromStr;
+use std::str;
+
+extern crate mustache;
+use mustache::{MapBuilder, Template};
 
 use response;
 use pies;
@@ -44,6 +48,21 @@ pub fn pies(req: &mut Request) -> IronResult<Response> {
     };
 
     response::debug(&url.query_pairs())
+}
+
+fn pie_template() -> mustache::Template {
+    mustache::compile_str("
+    {{#pies}}
+    <h1>{{name}}</h1>
+    <img src=\"{{image_url}}\" width=\"50%\"></img>
+    <p>price: {{price_per_slice}}</p>
+    <p>remaining: {{remaining_slices}}</p>
+    <p> {{#purchases}}
+        <p>{{username}} purchased {{slices}}<p>
+        {{/purchases}}
+    </p>
+    {{/pies}}
+    ")
 }
 
 pub fn pie(req: &mut Request) -> IronResult<Response> {
@@ -87,7 +106,12 @@ pub fn pie(req: &mut Request) -> IronResult<Response> {
             response::json(data)
         },
         Some(x) => {
-            response::html(format!("<html><code>{}</code></html>", json::as_pretty_json(&show_pie)))
+            let mut bytes = vec![];
+            let mut pies = vec![];
+            pies.push(show_pie);
+            pie_template().render(&mut bytes, &pies::ShowPies { pies: pies }).unwrap();
+
+            response::html(format!("<html>{}</html>", str::from_utf8(&bytes).unwrap()))
         },
         _ => response::not_found()
     }

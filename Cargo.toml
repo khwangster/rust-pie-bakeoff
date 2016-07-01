@@ -13,3 +13,4 @@ redis = "*"
 r2d2 = "*"
 r2d2_redis = "*"
 url = { git = "https://github.com/servo/rust-url" }
+mustache = "*"

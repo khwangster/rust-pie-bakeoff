@@ -29,6 +29,8 @@ use redis::Commands;
 extern crate url;
 use url::{Url, Host};
 
+extern crate mustache;
+
 mod endpoints;
 mod response;
 mod pies;
