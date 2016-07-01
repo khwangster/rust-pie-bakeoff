@@ -13,9 +13,9 @@ use r2d2_redis::RedisConnectionManager;
 
 use pies;
 
-//#[derive(Copy, Clone)]
-//pub struct Redis;
-//impl Key for Redis { type Value = r2d2::Pool<r2d2_redis::RedisConnectionManager>; }
+#[derive(Copy, Clone)]
+pub struct Redis;
+impl Key for Redis { type Value = r2d2::Pool<r2d2_redis::RedisConnectionManager>; }
 
 #[derive(Copy, Clone)]
 pub struct AllPies;
@@ -28,7 +28,6 @@ impl Key for AllPieId { type Value = Vec<u64>; }
 #[derive(Copy, Clone)]
 pub struct IdIndex;
 impl Key for IdIndex { type Value = HashMap<u64, pies::Pie>; }
-
 
 #[derive(Copy, Clone)]
 pub struct LabelIndex;

@@ -24,13 +24,13 @@ use std::default::Default;
 use std::thread;
 
 use r2d2_redis::RedisConnectionManager;
-
 use redis::Commands;
 
 mod endpoints;
 mod response;
 mod pies;
 mod cache;
+mod pie_state;
 
 fn main() {
     let router = router!(
@@ -46,6 +46,10 @@ fn main() {
     chain.link_before(Read::<cache::IdIndex>::one(make_id_index(&pies)));
     chain.link_before(Read::<cache::AllPieId>::one(make_id_vec(&pies)));
     chain.link_before(Read::<cache::LabelIndex>::one(make_label_index(&pies)));
+
+    let redis = connect_redis();
+    chain.link_before(Read::<cache::Redis>::one(redis.clone()));
+    update_redis(&pies, &redis);
 
     Iron::new(chain).http("localhost:3000").unwrap();
 
@@ -64,17 +68,19 @@ fn parse_pie_json() -> Vec<pies::Pie> {
     pies::new(json)
 }
 
-//fn connect_redis() -> r2d2::Pool<r2d2_redis::RedisConnectionManager> {
-//    let config = Default::default();
-//    let manager = RedisConnectionManager::new("redis://localhost").unwrap();
-//    let pool = r2d2::Pool::new(config, manager).unwrap();
-//    pool
-//}
-//
-//fn update_redis(pies: &Vec<pies::Pie>) {
-//    pies;
-//}
-//
+fn connect_redis() -> r2d2::Pool<r2d2_redis::RedisConnectionManager> {
+    let config = Default::default();
+    let manager = RedisConnectionManager::new("redis://localhost").unwrap();
+    let pool = r2d2::Pool::new(config, manager).unwrap();
+    pool
+}
+
+fn update_redis(pies: &Vec<pies::Pie>, pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>) {
+    for pie in pies {
+        pie_state::set_remaining(pool, pie)
+    }
+}
+
 fn make_id_index(pies: &Vec<pies::Pie>) -> HashMap<u64, pies::Pie> {
     let mut hash = HashMap::new();
     for pie in pies {
