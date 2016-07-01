@@ -125,7 +125,7 @@ pub fn purchase(req: &mut Request) -> IronResult<Response> {
                         amount = f64::from_str(&value.clone()).ok();
                     },
                     "slices" => {
-                        slices = isize::from_str(&value.clone()).ok();
+                        slices = i64::from_str(&value.clone()).ok();
                     }
                     _ => {}
                 }
@@ -136,26 +136,31 @@ pub fn purchase(req: &mut Request) -> IronResult<Response> {
 
     match (username, amount, slices) {
         (Some(u), Some(a), Some(s)) => {
-            match pie_state::purchase_pie(&redis, &pie, &u, s) {
-                pie_state::PurchaseStatus::Success => {
-                    response::purchased()
+            let price = pie.price_per_slice * s as f64;
 
-                }
-                pie_state::PurchaseStatus::Fatty => {
-                    response::glutton()
+            if (price - a).abs() > 1e-5 {
+                response::bad_math()
+            } else {
+                match pie_state::purchase_pie(&redis, &pie, &u, s as isize) {
+                    pie_state::PurchaseStatus::Success => {
+                        response::purchased()
 
-                }
-                pie_state::PurchaseStatus::Gone => {
-                    response::gone()
+                    }
+                    pie_state::PurchaseStatus::Fatty => {
+                        response::glutton()
 
+                    }
+                    pie_state::PurchaseStatus::Gone => {
+                        response::gone()
+
+                    }
                 }
             }
         },
-        (None, None, None) => {
-            response::error()
+        (Some(u), None, _) => {
+            response::bad_math()
         },
         (_, _, _) => {
-//            response::debug(format!("username: {:?}, amount:{:?}, slices: {:?}", username, amount, slices))
             response::error()
         }
     }
