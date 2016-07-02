@@ -29,8 +29,9 @@ use pie_state;
 use cache;
 
 pub fn hello_world(req: &mut Request) -> IronResult<Response> {
-    let pies = req.get::<Read<cache::LabelIndex>>().unwrap();
-    response::debug(pies)
+//    let pies = req.get::<Read<cache::LabelIndex>>().unwrap();
+//    response::debug(pies)
+    response::text("hello world".to_string())
 }
 
 pub fn pies(req: &mut Request) -> IronResult<Response> {

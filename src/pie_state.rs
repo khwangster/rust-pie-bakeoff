@@ -21,7 +21,7 @@ pub fn set_remaining(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, pie:
     let _ : () = conn.set(remaining_key!(pie.id), pie.slices).unwrap();
 
     let n : u64 = conn.get(remaining_key!(pie.id)).unwrap();
-    println!("setting remaining for pie {} to {}", pie.name, n);
+//    println!("setting remaining for pie {} to {}", pie.name, n);
 }
 
 pub fn get_remaining(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, pie: &pies::Pie) -> u64 {
@@ -55,7 +55,7 @@ pub fn purchase_pie(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, pie: 
 
     if exists {
         let previous_amount : isize = conn.hget(purchases_key!(pie.id), user).unwrap();
-        println!("previous amount {:?}", previous_amount);
+//        println!("previous amount {:?}", previous_amount);
         if previous_amount + amount > 3 {
             return PurchaseStatus::Fatty;
         } else {
@@ -65,10 +65,10 @@ pub fn purchase_pie(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, pie: 
 
             let n : isize = conn.hincr(purchases_key!(pie.id), user, amount).unwrap();
             let _ : () = conn.incr(remaining_key!(pie.id), -1 * amount).unwrap();
-            println!("bought {} pies total!", n)
+//            println!("bought {} pies total!", n)
         }
     } else {
-        println!("buying pie!");
+//        println!("buying pie!");
         let n : isize = conn.hincr(purchases_key!(pie.id), user, amount).unwrap();
         let _ : () = conn.incr(remaining_key!(pie.id), -1 * amount).unwrap();
     }
@@ -90,6 +90,6 @@ pub fn pie_purchases(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, pie:
         vec.push(purchase);
     }
 
-    println!("{:?}", vec);
+//    println!("{:?}", vec);
     vec
 }
