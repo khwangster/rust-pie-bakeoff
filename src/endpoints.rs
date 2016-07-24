@@ -29,9 +29,7 @@ use pie_state;
 use cache;
 
 pub fn hello_world(req: &mut Request) -> IronResult<Response> {
-//    let pies = req.get::<Read<cache::LabelIndex>>().unwrap();
-//    response::debug(pies)
-    response::text("hello world".to_string())
+    response::text("Hello, World!".to_string())
 }
 
 pub fn pies(req: &mut Request) -> IronResult<Response> {
@@ -41,18 +39,25 @@ pub fn pies(req: &mut Request) -> IronResult<Response> {
 
     let mut pies = vec![];
     let mut bytes = vec![];
+    let mut ids = vec![];
 
     for (id, pie) in id_index.iter() {
-        let remaining = pie_state::get_remaining(&redis, &pie);
         let show_pie = pies::ShowPie {
             id: pie.id.clone(),
             name: pie.name.clone(),
             image_url: pie.image_url.clone(),
             price_per_slice: pie.price_per_slice.clone(),
-            remaining_slices: remaining,
+            remaining_slices: 0,
             purchases: vec![]
         };
+        ids.push(&pie.id);
         pies.push(show_pie);
+    }
+
+    let all_remaining = pie_state::get_all_remaining(&redis, &ids);
+
+    for (remaining, pie) in all_remaining.iter().zip(pies.iter_mut()) {
+        pie.remaining_slices = remaining.clone();
     }
 
     pie_template().render(&mut bytes, &pies::ShowPies { pies: pies }).unwrap();

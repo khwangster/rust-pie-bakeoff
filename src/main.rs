@@ -40,6 +40,7 @@ mod pie_state;
 fn main() {
     let router = router!(
         get "/" => endpoints::hello_world,
+        get "/hello_world" => endpoints::hello_world,
         get "/pies" => endpoints::pies,
         get "/pies/recommend" => endpoints::recommend,
         get "/pie/:pie_id" => endpoints::pie,

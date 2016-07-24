@@ -30,9 +30,14 @@ pub fn get_remaining(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, pie:
     n
 }
 
-//pub fn get_all_remaining(pool: pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, ids: Vec<u64>) {
-//
-//}
+pub fn get_all_remaining(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, ids: &Vec<&u64>) -> Vec<u64> {
+    let conn = pool.get().expect("redis connection failed");
+    let keys : Vec<String> = ids.iter().map( |&id|
+        remaining_key!(id)
+    ).collect();
+    let n : Vec<u64> = conn.get(keys).unwrap();
+    n
+}
 
 pub enum PurchaseStatus {
     Fatty,
