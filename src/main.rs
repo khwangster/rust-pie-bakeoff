@@ -14,6 +14,8 @@ extern crate persistent;
 use persistent::{State, Read, Write};
 use iron::typemap::Key;
 
+use std::cmp::Ordering;
+
 use std::collections::HashMap;
 use std::collections::HashSet;
 
@@ -56,14 +58,16 @@ fn main() {
     let mut chain = Chain::new(router);
     let pies = parse_pie_json();
     chain.link_before(Read::<cache::IdIndex>::one(make_id_index(&pies)));
-    chain.link_before(Read::<cache::AllPieId>::one(make_id_vec(&pies)));
-    chain.link_before(Read::<cache::LabelBitVec>::one(make_label_bitvec(&pies)));
+
+    let sorted_pies = make_price_ordered(&pies);
+    chain.link_before(Read::<cache::LabelBitVec>::one(make_label_bitvec(&sorted_pies)));
+    chain.link_before(Read::<cache::SortedPies>::one(sorted_pies));
 
     let redis = connect_redis();
     chain.link_before(Read::<cache::Redis>::one(redis.clone()));
     update_redis(&pies, &redis);
 
-    //    Iron::new(chain).http("localhost:3000").unwrap();
+    Iron::new(chain).http("localhost:3000").unwrap();
 
 }
 
@@ -101,17 +105,6 @@ fn make_id_index(pies: &Vec<pies::Pie>) -> HashMap<u64, pies::Pie> {
     hash
 }
 
-//fn make_label_index(pies: &Vec<pies::Pie>) -> HashMap<String, Vec<pies::Pie>> {
-//    let mut hash = HashMap::new();
-//    for pie in pies {
-//        for label in &pie.labels {
-//            let vec = hash.entry(label.clone()).or_insert(vec![]);
-//            vec.push(pie.clone());
-//        }
-//    }
-//    hash
-//}
-
 fn make_label_bitvec(pies: &Vec<pies::Pie>) -> HashMap<String, BitVec> {
     let mut label_set = HashSet::new();
     let mut hash = HashMap::new();
@@ -136,10 +129,12 @@ fn make_label_bitvec(pies: &Vec<pies::Pie>) -> HashMap<String, BitVec> {
     hash
 }
 
-fn make_id_vec(pies: &Vec<pies::Pie>) -> Vec<u64> {
-    let mut vec = Vec::new();
-    for pie in pies {
-        vec.push(pie.id)
-    }
+fn make_price_ordered(pies: &Vec<pies::Pie>) -> Vec<pies::Pie> {
+    let mut vec = pies.clone();
+    vec.sort_by( |a, b|
+        b.price_per_slice.partial_cmp(&a.price_per_slice)
+            .unwrap_or(Ordering::Equal)
+    );
+    println!("ordered pies {:?}", vec);
     vec
 }

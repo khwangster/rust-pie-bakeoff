@@ -45,8 +45,10 @@ pub enum PurchaseStatus {
     Success
 }
 
+const ALLOWED_PIES: isize = 3;
+
 pub fn purchase_pie(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, pie: &pies::Pie, user: &String, amount: isize) -> PurchaseStatus {
-    if amount > 3 {
+    if amount > ALLOWED_PIES {
         return PurchaseStatus::Fatty;
     }
 
@@ -61,7 +63,7 @@ pub fn purchase_pie(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, pie: 
     if prev_purchase {
         let previous_amount : isize = conn.hget(purchases_key!(pie.id), user).unwrap();
 //        println!("previous amount {:?}", previous_amount);
-        if previous_amount + amount > 3 {
+        if previous_amount + amount > ALLOWED_PIES {
             return PurchaseStatus::Fatty;
         } else {
             if num_left <= amount {
