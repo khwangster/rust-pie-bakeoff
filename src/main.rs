@@ -15,6 +15,10 @@ use persistent::{State, Read, Write};
 use iron::typemap::Key;
 
 use std::collections::HashMap;
+use std::collections::HashSet;
+
+extern crate bit_vec;
+use bit_vec::BitVec;
 
 extern crate r2d2;
 extern crate r2d2_redis;
@@ -53,16 +57,13 @@ fn main() {
     let pies = parse_pie_json();
     chain.link_before(Read::<cache::IdIndex>::one(make_id_index(&pies)));
     chain.link_before(Read::<cache::AllPieId>::one(make_id_vec(&pies)));
-    chain.link_before(Read::<cache::LabelIndex>::one(make_label_index(&pies)));
+    chain.link_before(Read::<cache::LabelBitVec>::one(make_label_bitvec(&pies)));
 
     let redis = connect_redis();
     chain.link_before(Read::<cache::Redis>::one(redis.clone()));
     update_redis(&pies, &redis);
 
-//    pie_state::purchase_pie(&redis, &pies[0], "ken".to_string(), 1);
-//    pie_state::pie_purchases(&redis, &pies[0]);
-
-    Iron::new(chain).http("localhost:3000").unwrap();
+    //    Iron::new(chain).http("localhost:3000").unwrap();
 
 }
 
@@ -100,14 +101,38 @@ fn make_id_index(pies: &Vec<pies::Pie>) -> HashMap<u64, pies::Pie> {
     hash
 }
 
-fn make_label_index(pies: &Vec<pies::Pie>) -> HashMap<String, Vec<pies::Pie>> {
+//fn make_label_index(pies: &Vec<pies::Pie>) -> HashMap<String, Vec<pies::Pie>> {
+//    let mut hash = HashMap::new();
+//    for pie in pies {
+//        for label in &pie.labels {
+//            let vec = hash.entry(label.clone()).or_insert(vec![]);
+//            vec.push(pie.clone());
+//        }
+//    }
+//    hash
+//}
+
+fn make_label_bitvec(pies: &Vec<pies::Pie>) -> HashMap<String, BitVec> {
+    let mut label_set = HashSet::new();
     let mut hash = HashMap::new();
+
     for pie in pies {
         for label in &pie.labels {
-            let vec = hash.entry(label.clone()).or_insert(vec![]);
-            vec.push(pie.clone());
+            label_set.insert(label);
         }
     }
+
+    for label in label_set {
+        let mut bv = BitVec::from_elem(pies.len(), false);
+        for (i, pie) in pies.iter().enumerate() {
+            if pie.labels.contains(label) {
+                bv.set(i, true);
+            }
+        }
+        hash.insert(label.clone(), bv);
+    }
+
+    println!("{:?}", hash);
     hash
 }
 

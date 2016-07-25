@@ -20,7 +20,7 @@ pub fn set_remaining(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, pie:
     let conn = pool.get().expect("redis connection failed");
     let _ : () = conn.set(remaining_key!(pie.id), pie.slices).unwrap();
 
-    let n : u64 = conn.get(remaining_key!(pie.id)).unwrap();
+//    let n : u64 = conn.get(remaining_key!(pie.id)).unwrap();
 //    println!("setting remaining for pie {} to {}", pie.name, n);
 }
 
@@ -51,14 +51,14 @@ pub fn purchase_pie(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, pie: 
     }
 
     let conn = pool.get().expect("redis connection failed");
-    let exists : bool = conn.hexists(purchases_key!(pie.id), user).unwrap();
+    let prev_purchase : bool = conn.hexists(purchases_key!(pie.id), user).unwrap();
     let num_left : isize = conn.get(remaining_key!(pie.id)).unwrap();
 
     if num_left <= 0 {
         return PurchaseStatus::Gone;
     }
 
-    if exists {
+    if prev_purchase {
         let previous_amount : isize = conn.hget(purchases_key!(pie.id), user).unwrap();
 //        println!("previous amount {:?}", previous_amount);
         if previous_amount + amount > 3 {

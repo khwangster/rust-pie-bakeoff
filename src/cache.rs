@@ -4,7 +4,8 @@ use persistent::State;
 use iron::typemap::Key;
 use std::collections::HashMap;
 
-
+extern crate bit_vec;
+use bit_vec::BitVec;
 
 extern crate r2d2;
 extern crate r2d2_redis;
@@ -30,6 +31,6 @@ pub struct IdIndex;
 impl Key for IdIndex { type Value = HashMap<u64, pies::Pie>; }
 
 #[derive(Copy, Clone)]
-pub struct LabelIndex;
-impl Key for LabelIndex { type Value = HashMap<String, Vec<pies::Pie>>; }
+pub struct LabelBitVec;
+impl Key for LabelBitVec { type Value = HashMap<String, BitVec>; }
 
