@@ -28,7 +28,7 @@ impl Key for AllPieId { type Value = Vec<u64>; }
 
 #[derive(Copy, Clone)]
 pub struct IdIndex;
-impl Key for IdIndex { type Value = HashMap<u64, pies::Pie>; }
+impl Key for IdIndex { type Value = HashMap<u64, (pies::Pie, usize)>; }
 
 #[derive(Copy, Clone)]
 pub struct LabelBitVec;

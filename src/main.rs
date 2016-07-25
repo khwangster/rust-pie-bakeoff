@@ -67,8 +67,7 @@ fn main() {
     chain.link_before(Read::<cache::Redis>::one(redis.clone()));
     update_redis(&pies, &redis);
 
-    Iron::new(chain).http("localhost:3000").unwrap();
-
+    Iron::new(chain).http("localhost:31415").unwrap();
 }
 
 fn parse_pie_json() -> Vec<pies::Pie> {
@@ -97,10 +96,10 @@ fn update_redis(pies: &Vec<pies::Pie>, pool: &r2d2::Pool<r2d2_redis::RedisConnec
     }
 }
 
-fn make_id_index(pies: &Vec<pies::Pie>) -> HashMap<u64, pies::Pie> {
+fn make_id_index(pies: &Vec<pies::Pie>) -> HashMap<u64, (pies::Pie, usize)> {
     let mut hash = HashMap::new();
-    for pie in pies {
-        hash.insert(pie.id, pie.clone());
+    for (i, pie) in pies.iter().enumerate() {
+        hash.insert(pie.id, (pie.clone(), i));
     }
     hash
 }

@@ -41,16 +41,16 @@ pub fn pies(req: &mut Request) -> IronResult<Response> {
     let mut bytes = vec![];
     let mut ids = vec![];
 
-    for (id, pie) in id_index.iter() {
+    for (id, tuple) in id_index.iter() {
         let show_pie = pies::ShowPie {
-            id: pie.id.clone(),
-            name: pie.name.clone(),
-            image_url: pie.image_url.clone(),
-            price_per_slice: pie.price_per_slice.clone(),
+            id: tuple.0.id.clone(),
+            name: tuple.0.name.clone(),
+            image_url: tuple.0.image_url.clone(),
+            price_per_slice: tuple.0.price_per_slice.clone(),
             remaining_slices: 0,
             purchases: vec![]
         };
-        ids.push(&pie.id);
+        ids.push(&tuple.0.id);
         pies.push(show_pie);
     }
 
@@ -98,7 +98,7 @@ pub fn pie(req: &mut Request) -> IronResult<Response> {
     };
 
     // return if we can't find pie in cache
-    let pie = if let Some(x) = id_index.get(&pie_id) {
+    let (pie, bitvec_pos) = if let Some(x) = id_index.get(&pie_id) {
         x.clone()
     } else {
         return response::not_found()
@@ -142,7 +142,7 @@ pub fn purchase(req: &mut Request) -> IronResult<Response> {
     // return if we can't find pie_id
     let pie_id = u64::from_str(extensions.find("pie_id").unwrap()).unwrap();
 
-    let pie = if let Some(x) = id_index.get(&pie_id) {
+    let (pie, bitvec_pos) = if let Some(x) = id_index.get(&pie_id) {
         x.clone()
     } else {
         return response::not_found()

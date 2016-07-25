@@ -70,7 +70,7 @@ pub fn debug<T>(something: T) -> IronResult<Response>
 pub fn text(string: String) -> IronResult<Response> {
     Ok(Response::with((
                           status::Ok,
-                          format!("{}", string),
+                          string,
                           Header(ContentType::plaintext())
                       )))
 }
