@@ -122,12 +122,12 @@ fn pad_shorter_bv(bv1: &mut BitVec, bv2: &mut BitVec) -> () {
     shorter.grow(diff, false);
 }
 
-pub fn recommend(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,
+pub fn recommend<'pie>(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,
                  labels: &Vec<String>,
-                 pies: &Vec<pies::Pie>,
+                 pies: &'pie Vec<pies::Pie>,
                  label_bitvecs: &HashMap<String, BitVec>,
                  user: &String,
-                 budget: &String) -> Option<pies::Pie> {
+                 budget: &String) -> Option<&'pie pies::Pie> {
 
     let mut possible_pies = flatten_bv(&labels, &label_bitvecs);
     println!("possible pies {:?}", possible_pies);
@@ -149,15 +149,17 @@ pub fn recommend(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,
     println!("matching: {:?} ", possible_pies);
 
     if budget == "cheap" {
-        for (i, pie_match) in possible_pies.iter().rev().enumerate() {
+        for (i, pie_match) in possible_pies.iter().enumerate().rev() {
+            println!("cheap checking {} -> {}", i, pie_match);
             if pie_match {
-                return None;
+                return pies.get(i);
             }
         }
     } else if budget == "premium" {
         for (i, pie_match) in possible_pies.iter().enumerate() {
+            println!("premium checking {} -> {}", i, pie_match);
             if pie_match {
-                return None;
+                return pies.get(i);
             }
         }
     } else {
@@ -174,6 +176,8 @@ pub fn purchase_pie(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,
     if amount > ALLOWED_PIES {
         return PurchaseStatus::Fatty;
     }
+
+    println!("bitvec pos for purchase {}", bitvec_pos);
 
     let conn = pool.get().expect("redis connection failed");
     if check_user_blacklist(&conn, user, bitvec_pos) {

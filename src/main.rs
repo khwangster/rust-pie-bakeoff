@@ -59,10 +59,9 @@ fn main() {
 
     let mut chain = Chain::new(router);
     let pies = parse_pie_json();
-    chain.link_before(Read::<cache::IdIndex>::one(make_id_index(&pies)));
-
     let sorted_pies = make_price_ordered(&pies);
     chain.link_before(Read::<cache::LabelBitVec>::one(make_label_bitvec(&sorted_pies)));
+    chain.link_before(Read::<cache::IdIndex>::one(make_id_index(&sorted_pies)));
     chain.link_before(Read::<cache::SortedPies>::one(sorted_pies));
 
     let redis = connect_redis();
@@ -87,7 +86,7 @@ fn parse_pie_json() -> Vec<pies::Pie> {
 
 fn connect_redis() -> r2d2::Pool<r2d2_redis::RedisConnectionManager> {
     let config = Default::default();
-    let manager = RedisConnectionManager::new("redis://localhost").unwrap();
+    let manager = RedisConnectionManager::new("unix:////tmp/redis.sock").unwrap();
     let pool = r2d2::Pool::new(config, manager).unwrap();
     pool
 }
@@ -126,7 +125,7 @@ fn make_label_bitvec(pies: &Vec<pies::Pie>) -> HashMap<String, BitVec> {
         hash.insert(label.clone(), bv);
     }
 
-    println!("{:?}", hash);
+    println!("bitvecs {:?}\n", hash);
     hash
 }
 
@@ -136,6 +135,6 @@ fn make_price_ordered(pies: &Vec<pies::Pie>) -> Vec<pies::Pie> {
         b.price_per_slice.partial_cmp(&a.price_per_slice)
             .unwrap_or(Ordering::Equal)
     );
-    println!("ordered pies {:?}", vec);
+    println!("ordered pies {:?}\n", vec);
     vec
 }

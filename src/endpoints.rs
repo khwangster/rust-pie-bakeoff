@@ -244,7 +244,7 @@ pub fn recommend(req: &mut Request) -> IronResult<Response> {
     match (username, budget) {
         (Some(u), Some(b)) => {
             if labels.len() > 0 {
-                let pie = pie_state::recommend(
+                let pie_opt = pie_state::recommend(
                     &redis,
                     &labels,
                     &sorted_pies,
@@ -252,7 +252,15 @@ pub fn recommend(req: &mut Request) -> IronResult<Response> {
                     &u,
                     &b
                 );
-
+//                println!("recommending pie {:?}", pie_opt);
+                match pie_opt {
+                    Some(pie) => {
+                        return response::recommend(pie.id as usize);
+                    }
+                    None => {
+                        return response::no_recommends();
+                    }
+                }
             } else {
                 return response::error()
             }
@@ -261,6 +269,5 @@ pub fn recommend(req: &mut Request) -> IronResult<Response> {
             return response::error()
         }
     }
-
-    response::text(String::from("hello"))
+    response::error()
 }
