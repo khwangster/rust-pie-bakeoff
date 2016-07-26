@@ -180,7 +180,7 @@ pub fn purchase(req: &mut Request) -> IronResult<Response> {
             if (price - a).abs() > 1e-5 {
                 response::bad_math()
             } else {
-                match pie_state::purchase_pie(&redis, &pie, &u, s as isize) {
+                match pie_state::purchase_pie(&redis, &pie, bitvec_pos, &u, s as isize) {
                     pie_state::PurchaseStatus::Success => {
                         response::purchased()
 
