@@ -242,13 +242,15 @@ pub fn recommend(req: &mut Request) -> IronResult<Response> {
     };
 
     match (username, budget) {
-        (Some(u), Some(a)) => {
+        (Some(u), Some(b)) => {
             if labels.len() > 0 {
                 let pie = pie_state::recommend(
                     &redis,
                     &labels,
                     &sorted_pies,
-                    &label_bitvecs
+                    &label_bitvecs,
+                    &u,
+                    &b
                 );
 
             } else {

@@ -50,6 +50,22 @@ pub fn glutton() -> IronResult<Response> {
                       )))
 }
 
+pub fn no_recommends() -> IronResult<Response> {
+    Ok(Response::with((
+                          status::NotFound,
+                          "{\"error\": \"Sorry we don’t have what you’re looking for.  Come back early tomorrow before the crowds come from the best pie selection.\"}",
+                          Header(ContentType::json())
+                      )))
+}
+
+pub fn recommend(i: usize) -> IronResult<Response> {
+    Ok(Response::with((
+                          status::Ok,
+                          format!("{{ \"pie_url\": \"http://rust.fanboy.app/pies/{}\" }}", i),
+                          Header(ContentType::json())
+                      )))
+}
+
 pub fn bad_math() -> IronResult<Response> {
     Ok(Response::with((
                           status::PaymentRequired,

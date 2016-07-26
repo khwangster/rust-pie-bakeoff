@@ -112,13 +112,42 @@ fn flatten_bv(labels: &Vec<String>, label_bitvecs: &HashMap<String, BitVec>) -> 
     scratch_bv
 }
 
+fn pad_shorter_bv(bv1: &mut BitVec, bv2: &mut BitVec) -> () {
+    let (longer, shorter) = if bv1.len() > bv2.len()  {
+        (bv1, bv2)
+    } else {
+        (bv2, bv1)
+    };
+
+    let diff = longer.len() - shorter.len();
+    shorter.grow(diff, false);
+}
+
 pub fn recommend(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,
                  labels: &Vec<String>,
                  pies: &VecDeque<pies::Pie>,
-                 label_bitvecs: &HashMap<String, BitVec>) -> Option<pies::Pie> {
+                 label_bitvecs: &HashMap<String, BitVec>,
+                 user: &String,
+                 budget: &String) -> Option<pies::Pie> {
 
-    let possible_pies = flatten_bv(&labels, &label_bitvecs);
-    println!("{:?}", possible_pies);
+    let mut possible_pies = flatten_bv(&labels, &label_bitvecs);
+    println!("possible pies {:?}", possible_pies);
+
+    if possible_pies.none() {
+        return None;
+    }
+
+    let conn = pool.get().expect("redis connection failed");
+    let mut user_blacklist = get_user_blacklist(&conn, user);
+
+    pad_shorter_bv(&mut possible_pies, &mut user_blacklist);
+    println!("possible: {:?} blacklisted: {:?}", possible_pies, user_blacklist);
+
+    // todo: deconfusion comment
+    user_blacklist.negate();
+    possible_pies.intersect(&user_blacklist);
+
+    println!("matching: {:?} ", possible_pies);
 
     None
 }
@@ -133,7 +162,6 @@ pub fn purchase_pie(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,
     }
 
     let conn = pool.get().expect("redis connection failed");
-    get_user_blacklist(&conn, user);
     if check_user_blacklist(&conn, user, bitvec_pos) {
 //        println!("blocked purchase via blacklist");
         return PurchaseStatus::Fatty;
