@@ -10,6 +10,7 @@ use r2d2_redis::RedisConnectionManager;
 use redis::Commands;
 
 use std::collections::HashMap;
+use std::collections::VecDeque;
 use std::ops::Deref;
 
 extern crate bit_vec;
@@ -81,6 +82,45 @@ fn set_user_blacklist(conn: &r2d2::PooledConnection<r2d2_redis::RedisConnectionM
 fn check_user_blacklist(conn: &r2d2::PooledConnection<r2d2_redis::RedisConnectionManager>, user: &String, bitvec_pos: usize) -> bool {
     let bitset : bool = conn.getbit(user_blacklist_key!(user), bitvec_pos).unwrap();
     bitset
+}
+
+fn flatten_bv(labels: &Vec<String>, label_bitvecs: &HashMap<String, BitVec>) -> BitVec {
+    let mut bitvecvec = vec![];
+
+    for label in labels {
+        match label_bitvecs.get(label) {
+            Some(bv) => {
+                bitvecvec.push(bv);
+            }
+            None => {
+                return BitVec::from_elem(1, false);
+            }
+        }
+    }
+
+    let mut scratch_bv = match bitvecvec.first() {
+        Some(bv) => bv.clone().to_owned(),
+        None => {
+            return BitVec::from_elem(1, false)
+        }
+    };
+
+    for bitvec in &bitvecvec {
+        scratch_bv.intersect(bitvec);
+    }
+
+    scratch_bv
+}
+
+pub fn recommend(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,
+                 labels: &Vec<String>,
+                 pies: &VecDeque<pies::Pie>,
+                 label_bitvecs: &HashMap<String, BitVec>) -> Option<pies::Pie> {
+
+    let possible_pies = flatten_bv(&labels, &label_bitvecs);
+    println!("{:?}", possible_pies);
+
+    None
 }
 
 pub fn purchase_pie(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,

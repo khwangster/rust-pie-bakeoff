@@ -18,6 +18,9 @@ use std::cmp::Ordering;
 
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::collections::VecDeque;
+
+use response::core::iter::FromIterator;
 
 extern crate bit_vec;
 use bit_vec::BitVec;
@@ -104,7 +107,7 @@ fn make_id_index(pies: &Vec<pies::Pie>) -> HashMap<u64, (pies::Pie, usize)> {
     hash
 }
 
-fn make_label_bitvec(pies: &Vec<pies::Pie>) -> HashMap<String, BitVec> {
+fn make_label_bitvec(pies: &VecDeque<pies::Pie>) -> HashMap<String, BitVec> {
     let mut label_set = HashSet::new();
     let mut hash = HashMap::new();
 
@@ -128,12 +131,12 @@ fn make_label_bitvec(pies: &Vec<pies::Pie>) -> HashMap<String, BitVec> {
     hash
 }
 
-fn make_price_ordered(pies: &Vec<pies::Pie>) -> Vec<pies::Pie> {
+fn make_price_ordered(pies: &Vec<pies::Pie>) -> VecDeque<pies::Pie> {
     let mut vec = pies.clone();
     vec.sort_by( |a, b|
         b.price_per_slice.partial_cmp(&a.price_per_slice)
             .unwrap_or(Ordering::Equal)
     );
     println!("ordered pies {:?}", vec);
-    vec
+    VecDeque::from(vec)
 }

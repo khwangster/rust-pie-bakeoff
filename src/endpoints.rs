@@ -207,5 +207,58 @@ pub fn purchase(req: &mut Request) -> IronResult<Response> {
 }
 
 pub fn recommend(req: &mut Request) -> IronResult<Response> {
+    let redis = req.get::<Read<cache::Redis>>().unwrap();
+
+    let label_bitvecs = req.get::<Read<cache::LabelBitVec>>().unwrap();
+    let sorted_pies = req.get::<Read<cache::SortedPies>>().unwrap();
+
+    let url = req.url.clone().into_generic_url();
+
+    let mut labels = vec![];
+
+    let mut username = None;
+    let mut budget = None;
+
+    match url.query_pairs() {
+        Some(vec) => {
+            for &(ref name, ref value) in vec.iter() {
+                match name.trim() {
+                    "username" => {
+                        username = Some(value.clone());
+                    },
+                    "budget" => {
+                        budget = Some(value.clone());
+                    },
+                    "labels" => {
+                        for label in value.split(",") {
+                            labels.push(String::from(label));
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        },
+        None => return response::error()
+    };
+
+    match (username, budget) {
+        (Some(u), Some(a)) => {
+            if labels.len() > 0 {
+                let pie = pie_state::recommend(
+                    &redis,
+                    &labels,
+                    &sorted_pies,
+                    &label_bitvecs
+                );
+
+            } else {
+                return response::error()
+            }
+        }
+        (_, _) => {
+            return response::error()
+        }
+    }
+
     response::text(String::from("hello"))
 }
