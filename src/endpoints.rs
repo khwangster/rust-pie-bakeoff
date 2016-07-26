@@ -1,18 +1,13 @@
 extern crate iron;
 use iron::prelude::*;
-use iron::status;
-use iron::headers::ContentType;
-use iron::modifiers::Header;
 
 extern crate router;
 use router::Router;
 
 extern crate url;
-use url::{Url, Host};
 
 extern crate persistent;
-use persistent::{State, Read, Write};
-use iron::typemap::Key;
+use persistent::{Read};
 
 extern crate rustc_serialize;
 use rustc_serialize::json;
@@ -21,17 +16,15 @@ use std::str::FromStr;
 use std::str;
 
 extern crate mustache;
-use mustache::{MapBuilder, Template};
 
 use response::core::borrow::Borrow;
-use response::core::ops::Deref;
 
 use response;
 use pies;
 use pie_state;
 use cache;
 
-pub fn hello_world(req: &mut Request) -> IronResult<Response> {
+pub fn hello_world(_: &mut Request) -> IronResult<Response> {
     response::text("Hello, World!".to_string())
 }
 
@@ -44,7 +37,7 @@ pub fn pies(req: &mut Request) -> IronResult<Response> {
     let mut bytes = vec![];
     let mut ids = vec![];
 
-    for (id, tuple) in id_index.iter() {
+    for (_id, tuple) in id_index.iter() {
         let show_pie = pies::ShowPie {
             id: tuple.0.id.clone(),
             name: tuple.0.name.clone(),
@@ -102,7 +95,7 @@ pub fn pie(req: &mut Request) -> IronResult<Response> {
     };
 
     // return if we can't find pie in cache
-    let (pie, bitvec_pos) = if let Some(x) = id_index.get(&pie_id) {
+    let (pie, _bitvec_pos) = if let Some(x) = id_index.get(&pie_id) {
         x.clone()
     } else {
         return response::not_found()
@@ -124,7 +117,7 @@ pub fn pie(req: &mut Request) -> IronResult<Response> {
             let data: String = json::encode(&show_pie).unwrap();
             response::json(data)
         },
-        Some(x) => {
+        Some(_) => {
             let mut bytes = vec![];
             let mut pies = vec![];
             pies.push(show_pie);
@@ -197,7 +190,7 @@ pub fn purchase(req: &mut Request) -> IronResult<Response> {
                 }
             }
         },
-        (Some(u), None, _) => {
+        (Some(_u), None, _) => {
             response::bad_math()
         },
         (_, _, _) => {

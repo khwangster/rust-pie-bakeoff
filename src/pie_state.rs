@@ -3,10 +3,6 @@ extern crate r2d2;
 extern crate r2d2_redis;
 extern crate redis;
 
-use std::default::Default;
-use std::thread;
-
-use r2d2_redis::RedisConnectionManager;
 use redis::Commands;
 
 use std::collections::HashMap;
@@ -51,11 +47,6 @@ pub enum PurchaseStatus {
 }
 
 const ALLOWED_PIES: isize = 3;
-
-pub fn user_blacklist(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, user: &String) -> BitVec {
-    let conn = pool.get().expect("redis connection failed");
-    get_user_blacklist(&conn, user)
-}
 
 fn get_user_blacklist(conn: &r2d2::PooledConnection<r2d2_redis::RedisConnectionManager>, user: &String) -> BitVec {
     let bits : Vec<u8> = conn.get(user_blacklist_key!(user)).unwrap();
@@ -207,7 +198,7 @@ pub fn purchase_pie(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,
                 set_user_blacklist(&conn, user, bitvec_pos)
             }
 
-            let n : isize = conn.hincr(purchases_key!(pie.id), user, amount).unwrap();
+            let _ : isize = conn.hincr(purchases_key!(pie.id), user, amount).unwrap();
             let _ : () = conn.incr(remaining_key!(pie.id), -1 * amount).unwrap();
 //            println!("bought {} pies total!", n)
         }
@@ -217,7 +208,7 @@ pub fn purchase_pie(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,
             set_user_blacklist(&conn, user, bitvec_pos)
         }
 
-        let n : isize = conn.hincr(purchases_key!(pie.id), user, amount).unwrap();
+        let _ : isize = conn.hincr(purchases_key!(pie.id), user, amount).unwrap();
         let _ : () = conn.incr(remaining_key!(pie.id), -1 * amount).unwrap();
     }
 

@@ -11,15 +11,12 @@ use std::io::Read as io_read;
 extern crate rustc_serialize;
 
 extern crate persistent;
-use persistent::{State, Read, Write};
-use iron::typemap::Key;
+use persistent::{Read};
 
 use std::cmp::Ordering;
 
 use std::collections::HashMap;
 use std::collections::HashSet;
-
-use response::core::iter::FromIterator;
 
 extern crate bit_vec;
 use bit_vec::BitVec;
@@ -29,13 +26,10 @@ extern crate r2d2_redis;
 extern crate redis;
 
 use std::default::Default;
-use std::thread;
 
 use r2d2_redis::RedisConnectionManager;
-use redis::Commands;
 
 extern crate url;
-use url::{Url, Host};
 
 extern crate mustache;
 

@@ -1,6 +1,5 @@
 
 extern crate persistent;
-use persistent::State;
 use iron::typemap::Key;
 use std::collections::HashMap;
 
@@ -10,7 +9,6 @@ use bit_vec::BitVec;
 extern crate r2d2;
 extern crate r2d2_redis;
 extern crate redis;
-use r2d2_redis::RedisConnectionManager;
 
 use pies;
 
