@@ -60,12 +60,12 @@ pub fn user_blacklist(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, use
 fn get_user_blacklist(conn: &r2d2::PooledConnection<r2d2_redis::RedisConnectionManager>, user: &String) -> BitVec {
     let bits : Vec<u8> = conn.get(user_blacklist_key!(user)).unwrap();
     let bitvec = BitVec::from_bytes(&bits);
-    println!("{}: {:?}", user, bitvec);
+//    println!("{}: {:?}", user, bitvec);
     bitvec
 }
 
 fn set_user_blacklist(conn: &r2d2::PooledConnection<r2d2_redis::RedisConnectionManager>, user: &String, bitvec_pos: usize) {
-    println!("{:?} {:?}", user, bitvec_pos);
+//    println!("{:?} {:?}", user, bitvec_pos);
 
     // this doesn't work for some reason, so using the raw command version
     // let bitset : bool = conn.setbit(, bitvec_pos, true).unwrap();
@@ -130,7 +130,7 @@ pub fn recommend<'pie>(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,
                  budget: &String) -> Option<&'pie pies::Pie> {
 
     let mut possible_pies = flatten_bv(&labels, &label_bitvecs);
-    println!("possible pies {:?}", possible_pies);
+//    println!("possible pies {:?}", possible_pies);
 
     if possible_pies.none() {
         return None;
@@ -140,24 +140,24 @@ pub fn recommend<'pie>(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,
     let mut user_blacklist = get_user_blacklist(&conn, user);
 
     pad_shorter_bv(&mut possible_pies, &mut user_blacklist);
-    println!("possible: {:?} blacklisted: {:?}", possible_pies, user_blacklist);
+//    println!("possible: {:?} blacklisted: {:?}", possible_pies, user_blacklist);
 
     // todo: deconfusion comment
     user_blacklist.negate();
     possible_pies.intersect(&user_blacklist);
 
-    println!("matching: {:?} ", possible_pies);
+//    println!("matching: {:?} ", possible_pies);
 
     if budget == "cheap" {
         for (i, pie_match) in possible_pies.iter().enumerate().rev() {
-            println!("cheap checking {} -> {}", i, pie_match);
+//            println!("cheap checking {} -> {}", i, pie_match);
             if pie_match {
                 return pies.get(i);
             }
         }
     } else if budget == "premium" {
         for (i, pie_match) in possible_pies.iter().enumerate() {
-            println!("premium checking {} -> {}", i, pie_match);
+//            println!("premium checking {} -> {}", i, pie_match);
             if pie_match {
                 return pies.get(i);
             }
@@ -177,7 +177,7 @@ pub fn purchase_pie(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,
         return PurchaseStatus::Fatty;
     }
 
-    println!("bitvec pos for purchase {}", bitvec_pos);
+//    println!("bitvec pos for purchase {}", bitvec_pos);
 
     let conn = pool.get().expect("redis connection failed");
     if check_user_blacklist(&conn, user, bitvec_pos) {
