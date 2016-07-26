@@ -3,7 +3,6 @@ extern crate persistent;
 use persistent::State;
 use iron::typemap::Key;
 use std::collections::HashMap;
-use std::collections::VecDeque;
 
 extern crate bit_vec;
 use bit_vec::BitVec;
@@ -21,7 +20,7 @@ impl Key for Redis { type Value = r2d2::Pool<r2d2_redis::RedisConnectionManager>
 
 #[derive(Copy, Clone)]
 pub struct SortedPies;
-impl Key for SortedPies { type Value = VecDeque<pies::Pie>; }
+impl Key for SortedPies { type Value = Vec<pies::Pie>; }
 
 #[derive(Copy, Clone)]
 pub struct AllPieId;

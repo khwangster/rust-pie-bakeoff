@@ -10,7 +10,6 @@ use r2d2_redis::RedisConnectionManager;
 use redis::Commands;
 
 use std::collections::HashMap;
-use std::collections::VecDeque;
 use std::ops::Deref;
 
 extern crate bit_vec;
@@ -125,7 +124,7 @@ fn pad_shorter_bv(bv1: &mut BitVec, bv2: &mut BitVec) -> () {
 
 pub fn recommend(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,
                  labels: &Vec<String>,
-                 pies: &VecDeque<pies::Pie>,
+                 pies: &Vec<pies::Pie>,
                  label_bitvecs: &HashMap<String, BitVec>,
                  user: &String,
                  budget: &String) -> Option<pies::Pie> {
@@ -149,6 +148,21 @@ pub fn recommend(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,
 
     println!("matching: {:?} ", possible_pies);
 
+    if budget == "cheap" {
+        for (i, pie_match) in possible_pies.iter().rev().enumerate() {
+            if pie_match {
+                return None;
+            }
+        }
+    } else if budget == "premium" {
+        for (i, pie_match) in possible_pies.iter().enumerate() {
+            if pie_match {
+                return None;
+            }
+        }
+    } else {
+        return None;
+    }
     None
 }
 
