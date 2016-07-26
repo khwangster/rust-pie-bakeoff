@@ -11,7 +11,7 @@ persistent = "*"
 rustc-serialize = "*"
 redis = "*"
 r2d2 = "*"
-r2d2_redis = "*"
+r2d2_redis = "= 0.3.1"
 url = { git = "https://github.com/servo/rust-url" }
 mustache = "*"
 bit-vec = "*"

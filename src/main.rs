@@ -80,13 +80,13 @@ fn parse_pie_json() -> Vec<pies::Pie> {
     res.read_to_string(&mut json)
         .expect("failed to read pies.json");
 
-    println!("{}", json);
+    println!("{}\n", json);
     pies::new(json)
 }
 
 fn connect_redis() -> r2d2::Pool<r2d2_redis::RedisConnectionManager> {
     let config = Default::default();
-    let manager = RedisConnectionManager::new("unix:////tmp/redis.sock").unwrap();
+    let manager = RedisConnectionManager::new("redis://localhost:6379").unwrap();
     let pool = r2d2::Pool::new(config, manager).unwrap();
     pool
 }

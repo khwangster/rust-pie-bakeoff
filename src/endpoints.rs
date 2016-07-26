@@ -23,6 +23,9 @@ use std::str;
 extern crate mustache;
 use mustache::{MapBuilder, Template};
 
+use response::core::borrow::Borrow;
+use response::core::ops::Deref;
+
 use response;
 use pies;
 use pie_state;
@@ -83,7 +86,8 @@ pub fn pie(req: &mut Request) -> IronResult<Response> {
 
     let id_index = req.get::<Read<cache::IdIndex>>().unwrap();
     let redis = req.get::<Read<cache::Redis>>().unwrap();
-    let url_end = req.url.path.last();
+    let url_path = req.url.path();
+    let url_end = url_path.last();
 
     // req.extensions must go last because borrow checker is dumb
     let pie_option = req.extensions.get::<Router>()
@@ -148,29 +152,26 @@ pub fn purchase(req: &mut Request) -> IronResult<Response> {
         return response::not_found()
     };
 
+    let iron_url = req.url.clone();
+    let url = iron_url.into_generic_url();
+
     let mut username = None;
     let mut amount = None;
     let mut slices = Some(1);
 
-    let url = req.url.clone().into_generic_url();
-    match url.query_pairs() {
-        Some(vec) => {
-            for &(ref name, ref value) in vec.iter() {
-                match name.trim() {
-                    "username" => {
-                        username = Some(value.clone());
-                    },
-                    "amount" => {
-                        amount = f64::from_str(&value.clone()).ok();
-                    },
-                    "slices" => {
-                        slices = i64::from_str(&value.clone()).ok();
-                    }
-                    _ => {}
-                }
+    for (key, value) in url.query_pairs() {
+        match key.borrow() {
+            "username" => {
+                username = Some(value);
+            },
+            "amount" => {
+                amount = f64::from_str(&value).ok();
+            },
+            "slices" => {
+                slices = i64::from_str(&value).ok();
             }
-        },
-        None => return response::error()
+            _ => {}
+        }
     };
 
     match (username, amount, slices) {
@@ -180,7 +181,7 @@ pub fn purchase(req: &mut Request) -> IronResult<Response> {
             if (price - a).abs() > 1e-5 {
                 response::bad_math()
             } else {
-                match pie_state::purchase_pie(&redis, &pie, bitvec_pos, &u, s as isize) {
+                match pie_state::purchase_pie(&redis, &pie, bitvec_pos, &u.into_owned(), s as isize) {
                     pie_state::PurchaseStatus::Success => {
                         response::purchased()
 
@@ -219,26 +220,21 @@ pub fn recommend(req: &mut Request) -> IronResult<Response> {
     let mut username = None;
     let mut budget = None;
 
-    match url.query_pairs() {
-        Some(vec) => {
-            for &(ref name, ref value) in vec.iter() {
-                match name.trim() {
-                    "username" => {
-                        username = Some(value.clone());
-                    },
-                    "budget" => {
-                        budget = Some(value.clone());
-                    },
-                    "labels" => {
-                        for label in value.split(",") {
-                            labels.push(String::from(label));
-                        }
-                    }
-                    _ => {}
+    for (key, value) in url.query_pairs() {
+        match key.borrow() {
+            "username" => {
+                username = Some(value.clone());
+            },
+            "budget" => {
+                budget = Some(value.clone());
+            },
+            "labels" => {
+                for label in value.split(",") {
+                    labels.push(String::from(label));
                 }
             }
-        },
-        None => return response::error()
+            _ => {}
+        }
     };
 
     match (username, budget) {
@@ -249,8 +245,8 @@ pub fn recommend(req: &mut Request) -> IronResult<Response> {
                     &labels,
                     &sorted_pies,
                     &label_bitvecs,
-                    &u,
-                    &b
+                    &u.into_owned(),
+                    &b.into_owned()
                 );
 //                println!("recommending pie {:?}", pie_opt);
                 match pie_opt {
