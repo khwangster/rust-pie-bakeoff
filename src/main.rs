@@ -65,7 +65,7 @@ fn main() {
     chain.link_before(Read::<cache::Redis>::one(redis.clone()));
     update_redis(&pies, &redis);
 
-    Iron::new(chain).listen_with("localhost:31415",
+    Iron::new(chain).listen_with("0.0.0.0:31415",
                                  16 * ::num_cpus::get(),
                                  Protocol::Http,
                                  None).unwrap();
