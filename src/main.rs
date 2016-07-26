@@ -1,5 +1,6 @@
 extern crate iron;
 use iron::prelude::*;
+use iron::Protocol;
 
 #[macro_use]
 extern crate router;
@@ -33,6 +34,8 @@ extern crate url;
 
 extern crate mustache;
 
+extern crate num_cpus;
+
 mod endpoints;
 mod response;
 mod pies;
@@ -62,7 +65,10 @@ fn main() {
     chain.link_before(Read::<cache::Redis>::one(redis.clone()));
     update_redis(&pies, &redis);
 
-    Iron::new(chain).http("localhost:31415").unwrap();
+    Iron::new(chain).listen_with("localhost:31415",
+                                 16 * ::num_cpus::get(),
+                                 Protocol::Http,
+                                 None).unwrap();
 }
 
 fn parse_pie_json() -> Vec<pies::Pie> {
@@ -79,7 +85,10 @@ fn parse_pie_json() -> Vec<pies::Pie> {
 }
 
 fn connect_redis() -> r2d2::Pool<r2d2_redis::RedisConnectionManager> {
-    let config = Default::default();
+//    let config = Default::default();
+    let config = r2d2::Config::builder()
+        .pool_size(16 * ::num_cpus::get() as u32)
+        .build();
     let manager = RedisConnectionManager::new("redis://localhost:6379").unwrap();
     let pool = r2d2::Pool::new(config, manager).unwrap();
     pool
