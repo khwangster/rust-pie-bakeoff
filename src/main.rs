@@ -66,7 +66,7 @@ fn main() {
     update_redis(&pies, &redis);
 
     Iron::new(chain).listen_with("0.0.0.0:31415",
-                                 16 * ::num_cpus::get(),
+                                 100 * ::num_cpus::get(),
                                  Protocol::Http,
                                  None).unwrap();
 }
@@ -87,7 +87,7 @@ fn parse_pie_json() -> Vec<pies::Pie> {
 fn connect_redis() -> r2d2::Pool<r2d2_redis::RedisConnectionManager> {
 //    let config = Default::default();
     let config = r2d2::Config::builder()
-        .pool_size(16 * ::num_cpus::get() as u32)
+        .pool_size(100 * ::num_cpus::get() as u32)
         .build();
     let manager = RedisConnectionManager::new("redis://localhost:6379").unwrap();
     let pool = r2d2::Pool::new(config, manager).unwrap();
