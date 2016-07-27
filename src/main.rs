@@ -65,10 +65,19 @@ fn main() {
     chain.link_before(Read::<cache::Redis>::one(redis.clone()));
     update_redis(&pies, &redis);
 
-    Iron::new(chain).listen_with("0.0.0.0:31415",
-                                 3000 * ::num_cpus::get(),
-                                 Protocol::Http,
-                                 None).unwrap();
+    if cfg!(feature = "prod") {
+        println!("running in production mode");
+        Iron::new(chain).listen_with("0.0.0.0:31415",
+                                     3000 * ::num_cpus::get(),
+                                     Protocol::Http,
+                                     None).unwrap();
+    } else {
+        Iron::new(chain).listen_with("0.0.0.0:31415",
+                                     8 * ::num_cpus::get(),
+                                     Protocol::Http,
+                                     None).unwrap();
+    }
+
 }
 
 fn parse_pie_json() -> Vec<pies::Pie> {
@@ -85,10 +94,15 @@ fn parse_pie_json() -> Vec<pies::Pie> {
 }
 
 fn connect_redis() -> r2d2::Pool<r2d2_redis::RedisConnectionManager> {
-//    let config = Default::default();
-    let config = r2d2::Config::builder()
-        .pool_size(1000 * ::num_cpus::get() as u32)
-        .build();
+    let config = if cfg!(feature = "prod") {
+        println!("running in production mode");
+        r2d2::Config::builder()
+            .pool_size(1000 * ::num_cpus::get() as u32)
+            .build()
+    } else {
+        Default::default()
+    };
+
     let manager = RedisConnectionManager::new("redis://localhost:6379").unwrap();
     let pool = r2d2::Pool::new(config, manager).unwrap();
     pool

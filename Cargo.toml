@@ -3,6 +3,9 @@ name = "bakeoff"
 version = "0.1.0"
 authors = ["Kenneth Hwang <ken@truex.com>"]
 
+[features]
+prod = []
+
 [dependencies]
 iron = "*"
 router = "*"

@@ -183,16 +183,16 @@ pub fn purchase_pie(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,
         return PurchaseStatus::Gone;
     }
 
+    if amount > num_left {
+        return PurchaseStatus::Gone;
+    }
+
     if prev_purchase {
         let previous_amount : isize = conn.hget(purchases_key!(pie.id), user).unwrap();
 //        println!("previous amount {:?}", previous_amount);
         if previous_amount + amount > ALLOWED_PIES {
             return PurchaseStatus::Fatty;
         } else {
-            if amount > num_left {
-                return PurchaseStatus::Gone;
-            }
-
             if previous_amount + amount == ALLOWED_PIES {
 //                println!("reached max amount");
                 set_user_blacklist(&conn, user, bitvec_pos)
