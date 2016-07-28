@@ -16,6 +16,7 @@ use pies;
 macro_rules! remaining_key { ($x:expr) => (format!("pie-{}-remaining", $x)) }
 macro_rules! purchases_key { ($x:expr) => (format!("pie-{}-purchases", $x)) }
 macro_rules! user_blacklist_key { ($x:expr) => (format!("user-{}-blacklist", $x)) }
+macro_rules! sold_out_key { () => ("pies-sold-out") }
 
 pub fn set_remaining(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>, pie: &pies::Pie) {
     let conn = pool.get().expect("redis connection failed");
@@ -55,6 +56,12 @@ fn get_user_blacklist(conn: &r2d2::PooledConnection<r2d2_redis::RedisConnectionM
     bitvec
 }
 
+fn get_pie_soldout(conn: &r2d2::PooledConnection<r2d2_redis::RedisConnectionManager>) -> BitVec {
+    let bits : Vec<u8> = conn.get(sold_out_key!()).unwrap();
+    let bitvec = BitVec::from_bytes(&bits);
+    bitvec
+}
+
 fn set_user_blacklist(conn: &r2d2::PooledConnection<r2d2_redis::RedisConnectionManager>, user: &String, bitvec_pos: usize) {
 //    println!("{:?} {:?}", user, bitvec_pos);
 
@@ -67,6 +74,15 @@ fn set_user_blacklist(conn: &r2d2::PooledConnection<r2d2_redis::RedisConnectionM
         .query(conn.deref())
         .unwrap();
 
+}
+
+fn set_pie_soldout(conn: &r2d2::PooledConnection<r2d2_redis::RedisConnectionManager>, bitvec_pos: usize) {
+    let _ : () = redis::cmd("SETBIT")
+        .arg(sold_out_key!())
+        .arg(bitvec_pos)
+        .arg(1)
+        .query(conn.deref())
+        .unwrap();
 }
 
 fn check_user_blacklist(conn: &r2d2::PooledConnection<r2d2_redis::RedisConnectionManager>, user: &String, bitvec_pos: usize) -> bool {
@@ -103,7 +119,7 @@ fn flatten_bv(labels: &Vec<String>, label_bitvecs: &HashMap<String, BitVec>) -> 
 }
 
 fn pad_shorter_bv(bv1: &mut BitVec, bv2: &mut BitVec) -> () {
-    let (longer, shorter) = if bv1.len() > bv2.len()  {
+    let (longer, shorter) = if bv1.len() > bv2.len() {
         (bv1, bv2)
     } else {
         (bv2, bv1)
@@ -129,13 +145,17 @@ pub fn recommend<'pie>(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,
 
     let conn = pool.get().expect("redis connection failed");
     let mut user_blacklist = get_user_blacklist(&conn, user);
+    let mut sold_out_pies = get_pie_soldout(&conn);
 
     pad_shorter_bv(&mut possible_pies, &mut user_blacklist);
-//    println!("possible: {:?} blacklisted: {:?}", possible_pies, user_blacklist);
+    pad_shorter_bv(&mut possible_pies, &mut sold_out_pies);
+    pad_shorter_bv(&mut user_blacklist, &mut sold_out_pies);
 
     // todo: deconfusion comment
     user_blacklist.negate();
+    sold_out_pies.negate();
     possible_pies.intersect(&user_blacklist);
+    possible_pies.intersect(&sold_out_pies);
 
 //    println!("matching: {:?} ", possible_pies);
 
@@ -210,6 +230,10 @@ pub fn purchase_pie(pool: &r2d2::Pool<r2d2_redis::RedisConnectionManager>,
 
         let _ : isize = conn.hincr(purchases_key!(pie.id), user, amount).unwrap();
         let _ : () = conn.incr(remaining_key!(pie.id), -1 * amount).unwrap();
+    }
+
+    if num_left - amount <= 0 {
+        set_pie_soldout(&conn, bitvec_pos);
     }
 
     PurchaseStatus::Success
