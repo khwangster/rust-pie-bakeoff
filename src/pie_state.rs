@@ -77,6 +77,9 @@ fn set_user_blacklist(conn: &r2d2::PooledConnection<r2d2_redis::RedisConnectionM
 }
 
 fn set_pie_soldout(conn: &r2d2::PooledConnection<r2d2_redis::RedisConnectionManager>, bitvec_pos: usize) {
+    // this doesn't work for some reason, using the raw command version
+    // let _ : () = conn.setbit(sold_out_key!(), bitvec_pos, true).unwrap();
+
     let _ : () = redis::cmd("SETBIT")
         .arg(sold_out_key!())
         .arg(bitvec_pos)
